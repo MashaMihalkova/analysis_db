@@ -16,10 +16,10 @@ import math
 import os
 
 
-class TYPE_Errors(object):
+class TYPEErrors(object):
 
     def __init__(self, df: pd.DataFrame, name_table: str):
-        super(TYPE_Errors, self).__init__()
+        super(TYPEErrors, self).__init__()
         self.df = df
         self.name_table = name_table
         self.type_error = ''
@@ -243,6 +243,7 @@ class TYPE_Errors(object):
                             if type(column1[j][i]) == pd._libs.tslibs.timestamps.Timestamp:
                                 self.print_name_table_row_PK(df, i, name_table, column1, j, False, PK,
                                                              'Mismatch of values in two tables')
+                            # ошибка! тип vakue не timestamp
                             if type(column1[j][i]) != pd._libs.tslibs.timestamps.Timestamp:
                                 if not math.isnan(column1[j][i]) and not math.isnan(column1[j][i + (df.shape[1]) // 2]):
                                     if column1[j][i] > column1[j][i + (df.shape[1]) // 2]:
@@ -345,13 +346,15 @@ def chek_dictionary_activity_code_and_activity():
     quary_ = pd.read_sql_query(sql, connection)
     if quary_.shape[0] == 0:
         logger.warning("Ни на одну работу не назначены коды!")
+        with open('/'.join((PATH_TO_LOG, 'log.txt')), 'a+') as outfile:
+            outfile.write('Warning (No codes are assigned to any table!) \n')
 
 
 def chek_all_tables(cursor):
     cursor.execute("""SELECT relname FROM pg_class WHERE relkind='r'
                                   AND relname !~ '^(pg_|sql_)';""")  # "rel" is short for relation.
     tables_ = [i[0] for i in cursor.fetchall()]
-    # tables_ = ['resassignment', 'activity']
+    tables_ = ['resassignment', 'activity']
 
     for i in tables_:
         if i != 'ISR' and i != 'ISR_del' and i != 'ISR_pmc' and i != 'alembic_version':

@@ -1,4 +1,6 @@
 import logging
+
+
 class CustomFormatter(logging.Formatter):
 
     grey = "\x1b[20;20m"
@@ -21,6 +23,8 @@ class CustomFormatter(logging.Formatter):
         log_fmt = self.FORMATS.get(record.levelno)
         formatter = logging.Formatter(log_fmt)
         return formatter.format(record)
+
+
 # create logger with 'spam_application'
 logger = logging.getLogger("exel_processing_data")
 logger.setLevel(logging.DEBUG)
