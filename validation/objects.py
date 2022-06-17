@@ -9,7 +9,7 @@ from db.database import SessionLocal
 from logging_format import logger
 
 PATH_TO_LOG = 'log/'
-
+NAME_LOG = 'log_.txt'
 
 class TypeErrors:
 
@@ -18,7 +18,7 @@ class TypeErrors:
         self.name_table = name_table
         self.pk = pk
         self.df_pmc = df_pmc
-
+        # self.data = {}
         self.data = {
             'Very big value': [],
             'Very small value': [],
@@ -27,7 +27,6 @@ class TypeErrors:
             'Big data': [],
             'Error span year': [],
             'Mismatch of values in two tables': [],
-            'Dublicate rows in resassagment': []
         }
 
     @staticmethod
@@ -39,9 +38,11 @@ class TypeErrors:
         return max_type, dict_type_column
 
     def write_to_dict(self):
-        with open('/'.join((PATH_TO_LOG, 'log.txt')), 'a+') as outfile:
+        with open('/'.join((PATH_TO_LOG, NAME_LOG)), 'a+') as outfile:
+            outfile.write('{"Table": [ \n')
+            outfile.write(f'"{self.name_table}",')
             json.dump(self.data, outfile)
-            outfile.write(', \n')
+            outfile.write(']}, \n')
 
     @staticmethod
     def func_all_int_float_array(column1, type_columns) -> list:
@@ -141,31 +142,38 @@ class TypeErrors:
                     f'warning small year in cell : column = {column_index} row = {i}')
 
     @staticmethod
-    def conv_type_for_json(column1, two_pk):
+    def conv_type_for_json(column1, two_pk, pk):
         dict_value = {}
-        if two_pk:
-            print(f'value = {column1[0]}')
-            print(f'value_pmc = {column1[1]}')
-            if type(column1[0]) == int:
-                dict_value = {
-                    f'value': int(column1[0]),
-                    f'pmc value': int(column1[1])}
-            elif type(column1[0]) == float or type(column1[0]) == np.float64 or type(column1[0]) == np.float32:
-                dict_value = {
-                    f'value': float(column1[0]),
-                    f'pmc value': float(column1[1])}
-            elif type(column1[0]) == str:
-                dict_value = {
-                    f'value': str(column1[0]),
-                    f'pmc value': str(column1[1])}
+        if pk:
+            word = 'PK'
+            word2 = 'PK_2'
         else:
-            print(f'value = {column1}')
+            word = 'value'
+            word2 = 'value_pmc'
+        if two_pk:
+            print(f'{word} = {column1[0]}')
+            print(f'{word2} = {column1[1]}')
+            if type(column1[0]) == int and type(column1[1]) == int:
+                dict_value = {
+                    f'{word}': int(column1[0]),
+                    f'{word2}': int(column1[1])}
+            elif (type(column1[0]) == float or type(column1[0]) == np.float64 or type(column1[0]) == np.float32) and \
+                    (type(column1[1]) == float or type(column1[1]) == np.float64 or type(column1[1]) == np.float32):
+                dict_value = {
+                    f'{word}': float(column1[0]),
+                    f'{word2}': float(column1[1])}
+            elif type(column1[0]) == str or type(column1[1]) == datetime.datetime:
+                dict_value = {
+                    f'{word}': str(column1[0]),
+                    f'{word2}': str(column1[1])}
+        else:
+            print(f'{word} = {column1}')
             if type(column1) == np.float64 or type(column1) == np.float32 or type(column1) == float:
-                dict_value = {f'value': float(column1)}
+                dict_value = {f'{word}': float(column1)}
             elif type(column1) == np.int:
-                dict_value = {f'value': int(column1)}
-            elif type(column1) == str:
-                dict_value = {f'value': str(column1)}
+                dict_value = {f'{word}': int(column1)}
+            elif type(column1) == str or type(column1) == datetime.datetime:
+                dict_value = {f'{word}': str(column1)}
 
         return dict_value
 
@@ -196,7 +204,7 @@ class TypeErrors:
             # print(f'{name_table}_pmc value = {column1[j+1][i]} \n')
             # values = [column1[j][i], column1[j][i + (df.shape[1]) // 2]]
             values = [column1[j][i], column1[j+1][i]]
-            dict_value = self.conv_type_for_json(values, True)
+            dict_value = self.conv_type_for_json(values, True, False)
         else:
             if type(PK) == str:
                 print(f'PK {PK} = {df[PK].values[j]}')
@@ -208,30 +216,80 @@ class TypeErrors:
                     PK[0]: int(df[PK[0]].values[j]),
                     PK[1]: str(df[PK[1]].values[j])}
             if type(column1) == np.ndarray:
-                dict_value = self.conv_type_for_json(column1[j], False)
+                dict_value = self.conv_type_for_json(column1[j], False, False)
             else:
-                dict_value = self.conv_type_for_json(column1, False)
+                dict_value = self.conv_type_for_json(column1, False, False)
         c = {**dict_, **dict_PK, **dict_value}
         self.data[f'{type_error}'].append(c)
 
-    # def analysis_two_tables(self):
-    #     column1 = self.df_pmc.values
-    #     for j in range(self.df_pmc.shape[0]):
-    #         for i in range(0, self.df_pmc.shape[1] // 2, 2):
-    #             if self.df_pmc.columns[i] != 'update_date':
-    #                 # if column1[j][i] != column1[j][i+1]:
-    #                 if column1[j][i] != column1[j][i + (self.df_pmc.shape[1]) // 2]:
-    #                     if type(column1[j][i]) != pd._libs.tslibs.nattype.NaTType and \
-    #                             type(column1[j][i + (self.df_pmc.shape[1]) // 2]) != pd._libs.tslibs.nattype.NaTType:
-    #                         if type(column1[j][i]) == pd._libs.tslibs.timestamps.Timestamp:
-    #                             self.print_name_table_row_pk(self.df_pmc, i, self.name_table, column1, j, False,
-    #                                                          self.pk, 'Mismatch of values in two tables')
-    #                         if type(column1[j][i]) != pd._libs.tslibs.timestamps.Timestamp:
-    #                             if not math.isnan(column1[j][i]) and not math.isnan(column1[j][i + (self.df_pmc.shape[1]) // 2]):
-    #                                 if column1[j][i] > column1[j][i + (self.df_pmc.shape[1]) // 2]:
-    #                                     self.print_name_table_row_pk(self.df_pmc, i, self.name_table, column1, j, False,
-    #                                                                  self.pk,
-    #                                                                  'Mismatch of values in two tables (new value is lower then old)')
+    def check_target(self):
+        if type(self.pk) == list:
+            sql = f'''
+                        SELECT
+                          {self.name_table}.{self.pk[0]},
+                          {self.name_table}.{self.pk[1]},
+                          {self.name_table}.target_qty,
+                          {self.name_table}.remain_qty,
+                          {self.name_table}.act_reg_qty
+                        FROM
+                          {self.name_table}
+                        WHERE
+                          ROUND({self.name_table}.target_qty)!=ROUND(
+                          {self.name_table}.remain_qty+{self.name_table}.act_reg_qty)
+                        '''
+
+        else:
+            sql = f'''
+                        SELECT
+                          {self.name_table}.{self.pk},
+                          {self.name_table}.target_qty,
+                          {self.name_table}.remain_qty,
+                          {self.name_table}.act_reg_qty
+                        FROM
+                          {self.name_table}
+                        WHERE
+                          ROUND({self.name_table}.target_qty)!=ROUND(
+                          {self.name_table}.remain_qty+{self.name_table}.act_reg_qty)
+                                                  '''
+
+        with SessionLocal() as db:
+            objects = db.execute(sql).fetchall()
+        # if len(objects) > 0:
+        if objects:
+            print(self.name_table)
+            print(self.pk)
+            k = 1
+            for row in range(len(objects)):
+                if type(self.pk) == list:
+                    print(f'{self.pk[0]} = {objects[row][0]}')
+                    print(f'{self.pk[1]} = {objects[row][1]}')
+                    dict_ = self.conv_type_for_json(column1=[objects[row][0], objects[row][1]], two_pk=True,
+                                                    pk=True)
+                    # if self.pk[1] == 'dt' or self.pk[0] == 'dt':
+                    #     dict_ = {'name_table': self.name_table,
+                    #              f'PK {self.pk[0]}': str(objects[row][0]),
+                    #              f'PK_2 {self.pk[1]}': str(objects[row][1]),
+                    #              }
+                    # else:
+                    # dict_ = {'name_table': self.name_table,
+                    #          f'PK {self.pk[0]}': objects[row][0],
+                    #          f'PK_2 {self.pk[1]}': objects[row][1],
+                    #          }
+                    k = 2
+                else:
+                    print(f'{self.pk} = {objects[row][0]}')
+                    dict_ = {'name_table': self.name_table,
+                            f'PK {self.pk}': objects[row][0]}
+                dict_val = {
+                    'target_qty': objects[row][k],
+                    'remain_qty': objects[row][k + 1],
+                    'act_reg_qty': objects[row][k + 2]
+                }
+                print(f'target_qty = {objects[row][k]}')
+                print(f'remain_qty = {objects[row][k+1]}')
+                print(f'act_reg_qty = {objects[row][k+2]}')
+                c = {**dict_, **dict_val}
+                self.data['target value not eqial (act+remain)'].append(c)
 
     def analysis_two_tables(self):
         column1 = self.df_pmc.values
@@ -256,7 +314,6 @@ class TypeErrors:
                                             self.print_name_table_row_pk(self.df_pmc, i, self.name_table, column1, j, False,
                                                                          self.pk,
                                                                          'Mismatch of values in two tables')
-
 
     # @dispatch(object, str, str)
     def analysis_data_df(self):
@@ -321,19 +378,34 @@ class Project(TypeErrors):
     def validate(self):
         self.analysis_data_df()
         self.analysis_two_tables()
+        self.write_to_dict()
 
 
 class ISR(TypeErrors):
     def validate(self):
         self.analysis_data_df()
         self.analysis_two_tables()
+        self.write_to_dict()
 
 
 class Activity(TypeErrors):
     def validate(self):
+        self.data = {
+            'Very big value': [],
+            'Very small value': [],
+            'Wrong sign': [],
+            'Small data': [],
+            'Big data': [],
+            'Error span year': [],
+            'Mismatch of values in two tables': [],
+            'another errors': []
+        }
         self.analysis_data_df()
         self.analysis_two_tables()
-        self.check_dictionary_activity_code_and_activity()
+        data = self.check_dictionary_activity_code_and_activity()
+        if data:
+            self.data['another errors'].append('Warning (No codes are assigned to any table!)')
+        self.write_to_dict()
 
     @staticmethod
     def check_dictionary_activity_code_and_activity():
@@ -354,22 +426,37 @@ class Activity(TypeErrors):
             objects = db.execute(sql).fetchall()
 
         if len(objects) == 0:
-            with open('/'.join((PATH_TO_LOG, 'log.txt')), 'a+') as outfile:
-                outfile.write('Warning (No codes are assigned to any table!) \n')
             logger.warning("Ни на одну работу не назначены коды!")
+            return 1
+        else:
+            return 0
 
 
 class Resource(TypeErrors):
     def validate(self):
         self.analysis_data_df()
         self.analysis_two_tables()
+        self.write_to_dict()
 
 
 class Resassignment(TypeErrors):
     def validate(self):
+        self.data = {
+            'Very big value': [],
+            'Very small value': [],
+            'Wrong sign': [],
+            'Small data': [],
+            'Big data': [],
+            'Error span year': [],
+            'Mismatch of values in two tables': [],
+            'Dublicate rows in resassagment': [],
+            'target value not equal (act+remain)':[]
+        }
         self.analysis_data_df()
         self.analysis_two_tables()
         self.analysis_resassagnment()
+        self.check_target()
+        self.write_to_dict()
 
     def analysis_resassagnment(self):
         if True:
@@ -403,51 +490,72 @@ class UDFCodeProject(TypeErrors):
     def validate(self):
         self.analysis_data_df()
         self.analysis_two_tables()
+        self.write_to_dict()
 
 
 class UDFCodeActivity(TypeErrors):
+    # TODO: русский язык в log
     def validate(self):
         self.analysis_data_df()
         self.analysis_two_tables()
+        self.write_to_dict()
 
 
 class UDFCodeResource(TypeErrors):
     def validate(self):
         self.analysis_data_df()
         self.analysis_two_tables()
+        self.write_to_dict()
 
 
 class UDFCodeResassignment(TypeErrors):
     def validate(self):
         self.analysis_data_df()
         self.analysis_two_tables()
+        self.write_to_dict()
 
 
 class DictionaryActivityCode(TypeErrors):
     def validate(self):
         self.analysis_data_df()
         self.analysis_two_tables()
+        self.write_to_dict()
 
 
 class DictionaryProjectCode(TypeErrors):
     def validate(self):
         self.analysis_data_df()
         self.analysis_two_tables()
+        self.write_to_dict()
 
 
 class DictionaryResourceCode(TypeErrors):
     def validate(self):
         self.analysis_data_df()
         self.analysis_two_tables()
+        self.write_to_dict()
 
 
 class ActvRel(TypeErrors):
     def validate(self):
         self.analysis_data_df()
         self.analysis_two_tables()
+        self.write_to_dict()
 
 
 class ResassignmentSpred(TypeErrors):
     def validate(self):
+        self.data = {
+            'Very big value': [],
+            'Very small value': [],
+            'Wrong sign': [],
+            'Small data': [],
+            'Big data': [],
+            'Error span year': [],
+            'Mismatch of values in two tables': [],
+            'target value not equal (act+remain)': []
+        }
         self.analysis_data_df()
         self.analysis_two_tables()
+        self.check_target()
+        self.write_to_dict()

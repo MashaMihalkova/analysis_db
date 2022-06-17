@@ -7,6 +7,7 @@ from db.models.etl import db_objects
 from validation import objects as validation
 
 PATH_TO_LOG = 'log/'
+NAME_LOG = 'log_.txt'
 
 
 def init_validation(object_name, obj_instance, obj_instance_pmc, schema, validation_instance):
@@ -39,7 +40,7 @@ def init_validation(object_name, obj_instance, obj_instance_pmc, schema, validat
 if __name__ == "__main__":
     if not os.path.exists(PATH_TO_LOG):
         os.makedirs(PATH_TO_LOG)
-    with open('/'.join((PATH_TO_LOG, 'log.txt')), 'a+') as fo:
+    with open('/'.join((PATH_TO_LOG, NAME_LOG)), 'a+') as fo:
         fo.write('[ \n')
 
     r = pd.DataFrame([])
@@ -59,5 +60,5 @@ if __name__ == "__main__":
     init_validation('actvrel', db_objects.ActvRel, db_objects.ActvRelPMC, project.ActvRel, validation.ActvRel)
     init_validation('resassignmentspred', db_objects.ResassignmentSpred, db_objects.ResassignmentSpredPMC, project.ResassignmentSpred, validation.ResassignmentSpred)
 
-    with open('/'.join((PATH_TO_LOG, 'log.txt')), 'a+') as fo:
+    with open('/'.join((PATH_TO_LOG, NAME_LOG)), 'a+') as fo:
         fo.write('] \n')
