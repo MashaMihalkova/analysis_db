@@ -136,6 +136,9 @@ class ActivityDel(Base):
 class Resource(Base):
     __tablename__ = "resource"
 
+    id_wbs = Column(Integer, nullable=True, index=False)
+    id_project = Column(Integer, nullable=True, index=False)
+
     id_resource = Column(Integer, primary_key=True, index=True)
     parent_id_resource = Column(Integer, nullable=True, index=False)
     resource_code = Column(Text, nullable=True, index=False)
@@ -149,6 +152,8 @@ class Resource(Base):
 @decorator("_asdict")
 class ResourcePMC(Base):
     __tablename__ = "resource_pmc"
+    id_wbs = Column(Integer, nullable=True, index=False)
+    id_project = Column(Integer, nullable=True, index=False)
 
     id_resource = Column(Integer, primary_key=True, index=True)
     parent_id_resource = Column(Integer, nullable=True, index=False)
@@ -420,6 +425,8 @@ class DictionaryActivityCodeDel(Base):
 @decorator("_asdict")
 class DictionaryProjectCode(Base):
     __tablename__ = "dictionary_project_code"
+    id_wbs = Column(Integer, nullable=True, index=False)
+    id_project = Column(Integer, nullable=True, index=False)
 
     id = Column(Integer, primary_key=True, index=True)
     Dictionary_Name = Column(Text, nullable=True, index=False)
@@ -434,6 +441,8 @@ class DictionaryProjectCode(Base):
 @decorator("_asdict")
 class DictionaryProjectCodePMC(Base):
     __tablename__ = "dictionary_project_code_pmc"
+    id_wbs = Column(Integer, nullable=True, index=False)
+    id_project = Column(Integer, nullable=True, index=False)
 
     id = Column(Integer, primary_key=True, index=True)
     Dictionary_Name = Column(Text, nullable=True, index=False)
@@ -455,6 +464,8 @@ class DictionaryProjectCodeDel(Base):
 @decorator("_asdict")
 class DictionaryResourceCode(Base):
     __tablename__ = "dictionary_resource_code"
+    id_wbs = Column(Integer, nullable=True, index=False)
+    id_project = Column(Integer, nullable=True, index=False)
 
     id = Column(Integer, primary_key=True, index=True)
     Dictionary_Name = Column(Text, nullable=True, index=False)
@@ -469,6 +480,8 @@ class DictionaryResourceCode(Base):
 @decorator("_asdict")
 class DictionaryResourceCodePMC(Base):
     __tablename__ = "dictionary_resource_code_pmc"
+    id_wbs = Column(Integer, nullable=True, index=False)
+    id_project = Column(Integer, nullable=True, index=False)
 
     id = Column(Integer, primary_key=True, index=True)
     Dictionary_Name = Column(Text, nullable=True, index=False)
@@ -486,9 +499,11 @@ class DictionaryResourceCodeDel(Base):
 
     id = Column(Integer, primary_key=True, index=True, unique=True)
 
-
+@decorator("_asdict")
 class UDFCodeResource(Base):
     __tablename__ = "udf_code_resource"
+    id_wbs = Column(Integer, nullable=True, index=False)
+    id_project = Column(Integer, nullable=True, index=False)
 
     id_resource = Column(Integer, primary_key=True, index=True)
     update_date = Column(DateTime, nullable=False, index=False)
@@ -512,9 +527,11 @@ class UDFCodeResource(Base):
     specialty_name = Column(Text, nullable=True, index=False)
     specialty_id = Column(Integer, nullable=True, index=False)
 
-
+@decorator("_asdict")
 class UDFCodeResourcePMC(Base):
     __tablename__ = "udf_code_resource_pmc"
+    id_wbs = Column(Integer, nullable=True, index=False)
+    id_project = Column(Integer, nullable=True, index=False)
 
     id_resource = Column(Integer, primary_key=True, index=True)
     update_date = Column(DateTime, nullable=False, index=False)

@@ -17,12 +17,14 @@ NAME_LOG = 'log_.txt'
 class TypeErrors:
 
     # def __init__(self, df: pd.DataFrame, name_table: str, pk: list, df_pmc: pd.DataFrame):
-    def __init__(self, df: pd.DataFrame, name_table: str, pk: list):
+    def __init__(self, df: pd.DataFrame, name_table: str, pk: list, id_wbs, id_proj):
         self.df = df
         self.name_table = name_table
         self.pk = pk
         # self.df_pmc = df_pmc
         # self.data = {}
+        self.id_proj = id_proj
+        self.id_wbs = id_wbs
         self.data = {
             'Very big value': [],
             'Very small value': [],
@@ -508,17 +510,27 @@ class TypeErrors:
     #                                                                      'Mismatch of values in two tables')
 
     def analysis_two_tables_sql(self):
-        sql = f'''
+        sql_PMC = f'''
         select * from {self.name_table}_pmc
+        WHERE {self.name_table}.id_project = {self.id_proj} 
+        AND {self.name_table}.id_wbs = {self.id_wbs}
         '''
+        # sql = f'''
+        #         select * from {self.name_table}
+        #         WHERE {self.name_table}.id_project = {self.id_proj}
+        #         AND {self.name_table}.id_wbs = {self.id_wbs}
+        #         '''
         with SessionLocal() as db:
-            pmc_table = db.execute(sql).fetchall()
+            pmc_table = db.execute(sql_PMC).fetchall()
+            # table = db.execute(sql).fetchall()
             # exec_column = self.df.columns.get_indexer(['update_date'])[0]
             p = pd.DataFrame(pmc_table)
+            # df = pd.DataFrame(table)
             if p.shape[0] == 0:
                 pass
             else:
                 column1 = self.df.loc[:, self.df.columns != 'update_date']
+                # column1 = df.loc[:, self.df.columns != 'update_date']
                 pmc_column1 = p.loc[:, p.columns != 'update_date']
                 if pmc_column1.shape[0] != column1.shape[0]:
                     pass
@@ -541,6 +553,7 @@ class TypeErrors:
                         rows = changed.index[i][0]
                         name_column = changed.index[i][1]
                         id_column = self.df.columns.get_indexer([name_column])[0]
+                        # id_column = df.columns.get_indexer([name_column])[0]
                         if type(y_) == pd._libs.tslibs.timestamps.Timestamp:
                             # def print_name_table_row_pk_sql(self, pmc_column1, i, name_table, column1, one_table, PK, type_error):
                             self.print_name_table_row_pk_sql(pmc_column1, id_column, self.name_table, two_colmns, False,
@@ -633,14 +646,20 @@ class TypeErrors:
         if type(self.pk) == str:
             sql_types = f'''
             SELECT  COLUMN_NAME, DATA_TYPE   FROM INFORMATION_SCHEMA.COLUMNS
-                    WHERE TABLE_NAME = '{self.name_table}' AND COLUMN_NAME != '{self.pk}';
+                    WHERE TABLE_NAME = '{self.name_table}' AND COLUMN_NAME != '{self.pk}' 
+                    
             '''
+        #      AND {self.name_table}.id_project = {self.id_proj}
+        #                     AND {self.name_table}.id_wbs = {self.id_wbs};
         else:
             sql_types = f'''
                         SELECT  COLUMN_NAME, DATA_TYPE   FROM INFORMATION_SCHEMA.COLUMNS
                                 WHERE TABLE_NAME = '{self.name_table}' AND COLUMN_NAME != '{self.pk[0]}'
-                                AND COLUMN_NAME != '{self.pk[1]}';
+                                AND COLUMN_NAME != '{self.pk[1]}'
+                               ;
                         '''
+        #      AND {self.name_table}.id_project = {self.id_proj}
+        #                                 AND {self.name_table}.id_wbs = {self.id_wbs}
         with SessionLocal() as db:
             name_types = db.execute(sql_types).fetchall()
 
