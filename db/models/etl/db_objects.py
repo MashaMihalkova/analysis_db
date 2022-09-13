@@ -136,9 +136,6 @@ class ActivityDel(Base):
 class Resource(Base):
     __tablename__ = "resource"
 
-    id_wbs = Column(Integer, nullable=True, index=False)
-    id_project = Column(Integer, nullable=True, index=False)
-
     id_resource = Column(Integer, primary_key=True, index=True)
     parent_id_resource = Column(Integer, nullable=True, index=False)
     resource_code = Column(Text, nullable=True, index=False)
@@ -147,6 +144,9 @@ class Resource(Base):
     unit_name = Column(Text, nullable=True, index=False)
     update_date = Column(DateTime, nullable=False, index=False)
     business_unit = Column(Text, nullable=False, index=True)
+
+    id_project = Column(Integer, nullable=True, index=False)
+    id_wbs = Column(Integer, nullable=True, index=False)
 
 
 @decorator("_asdict")

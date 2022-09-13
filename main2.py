@@ -6,8 +6,8 @@ from db.database import SessionLocal
 from db.models.etl import db_objects
 from validation import objects as validation
 
-PATH_TO_LOG = 'log/'
-NAME_LOG = 'log_.txt'
+# PATH_TO_LOG = 'log/'
+# NAME_LOG = 'log_new.txt'
 
 
 # TODO фильтр по id_wbs и id_proj
@@ -16,11 +16,11 @@ def init_validation(object_name, obj_instance, obj_instance_pmc, schema, validat
     pk = db_objects.Project.metadata.tables[object_name].primary_key.columns.keys()
     with SessionLocal() as db:
         objects = db.query(obj_instance).all()
-        objects_pmc = db.query(obj_instance, obj_instance_pmc).filter(
-            *[
-                getattr(obj_instance, item) == getattr(obj_instance_pmc, item) for item in pk
-            ]
-        ).all()
+        # objects_pmc = db.query(obj_instance, obj_instance_pmc).filter(
+        #     *[
+        #         getattr(obj_instance, item) == getattr(obj_instance_pmc, item) for item in pk
+        #     ]
+        # ).all()
 
         df = []
         # for obj in objects_pmc:
@@ -42,19 +42,19 @@ def init_validation(object_name, obj_instance, obj_instance_pmc, schema, validat
 
 
 if __name__ == "__main__":
-    if not os.path.exists(PATH_TO_LOG):
-        os.makedirs(PATH_TO_LOG)
-    with open('/'.join((PATH_TO_LOG, NAME_LOG)), 'a+') as fo:
+    if not os.path.exists(validation.PATH_TO_LOG):
+        os.makedirs(validation.PATH_TO_LOG)
+    with open('/'.join((validation.PATH_TO_LOG, validation.NAME_LOG)), 'a+') as fo:
         fo.write('[ \n')
 
     r = pd.DataFrame([])
 
-    id_wbs = 1836603
-    id_proj = 47476
+    id_wbs = 1692103
+    id_proj = 46538
 
     init_validation('project', db_objects.Project, db_objects.ProjectPMC, project.Project, validation.Project, id_wbs, id_proj)
     init_validation('activity', db_objects.Activity, db_objects.ActivityPMC, project.Activity, validation.Activity, id_wbs, id_proj)
-    init_validation('ISR', db_objects.ISR, db_objects.ISRPMC, project.ISR, validation.ISR, id_wbs, id_proj)
+    # init_validation('ISR', db_objects.ISR, db_objects.ISRPMC, project.ISR, validation.ISR, id_wbs, id_proj)
     init_validation('resource', db_objects.Resource, db_objects.ResourcePMC, project.Resource, validation.Resource, id_wbs, id_proj)
     init_validation('resassignment', db_objects.Resassignment, db_objects.ResassignmentPMC, project.Resassignment, validation.Resassignment, id_wbs, id_proj)
     init_validation('udf_code_project', db_objects.UDFCodeProject, db_objects.UDFCodeProjectPMC, project.UDFCodeProject, validation.UDFCodeProject, id_wbs, id_proj)
@@ -67,5 +67,5 @@ if __name__ == "__main__":
     init_validation('actvrel', db_objects.ActvRel, db_objects.ActvRelPMC, project.ActvRel, validation.ActvRel, id_wbs, id_proj)
     init_validation('resassignmentspred', db_objects.ResassignmentSpred, db_objects.ResassignmentSpredPMC, project.ResassignmentSpred, validation.ResassignmentSpred, id_wbs, id_proj)
 
-    with open('/'.join((PATH_TO_LOG, NAME_LOG)), 'a+') as fo:
+    with open('/'.join((validation.PATH_TO_LOG, validation.NAME_LOG)), 'a+') as fo:
         fo.write('] \n')

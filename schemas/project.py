@@ -86,11 +86,15 @@ class Resource(BaseModel):
     id_resource: int
     parent_id_resource: Optional[int]
     resource_code: Optional[str]
+
     resource_name: Optional[str]
     resource_type: Optional[str]
     unit_name: Optional[str]
     update_date: Optional[datetime]
     business_unit: Optional[str]
+
+    id_project: Optional[int]
+    id_wbs: Optional[int]
 
     def to_db_update_model(self):
         source_dict = super().dict(
@@ -262,7 +266,8 @@ class UDFCodeResource(BaseModel):
     specialty_code: Optional[str]
     specialty_name: Optional[str]
     specialty_id: Optional[int]
-
+    id_project: Optional[int]
+    id_wbs: Optional[int]
     def to_db_update_model(self):
         source_dict = super().dict(
             by_alias=True, exclude={"id_resource", "business_unit"}
@@ -356,6 +361,8 @@ class DictionaryResourceCode(BaseModel):
     full_code: Optional[str]
     update_date: Optional[datetime]
     business_unit: Optional[str]
+    id_project: Optional[int]
+    id_wbs: Optional[int]
 
     def to_db_update_model(self):
         source_dict = super().dict(by_alias=True, exclude={"id"})
