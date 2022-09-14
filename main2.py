@@ -29,6 +29,7 @@ def init_validation(object_name, obj_instance, obj_instance_pmc, schema, validat
         # d_all_pmc = pd.DataFrame(df)
 
         df = [schema(**obj._asdict()).dict() for obj in objects if obj.id_wbs == id_wbs and obj.id_project == id_proj]
+        # df = [schema(**obj._asdict()).dict() for obj in objects if obj.id_project == id_proj]
         # df = [schema(**obj._asdict()).dict() for obj in objects]
         d_all = pd.DataFrame(df)
         if d_all.values.shape[0] != 0:
@@ -50,7 +51,7 @@ if __name__ == "__main__":
     r = pd.DataFrame([])
 
     id_wbs = 1692103
-    id_proj = 46538
+    id_proj = 53055
 
     init_validation('project', db_objects.Project, db_objects.ProjectPMC, project.Project, validation.Project, id_wbs, id_proj)
     init_validation('activity', db_objects.Activity, db_objects.ActivityPMC, project.Activity, validation.Activity, id_wbs, id_proj)

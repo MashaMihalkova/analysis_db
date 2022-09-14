@@ -769,19 +769,22 @@ class TypeErrors:
                     start_ = re.findall(r'(StartDate)', self.df.columns[column_ind])
                     finish_ = re.findall(r'(FinishDate)', self.df.columns[column_ind])
                     if start_:
-                        start_date_column = column1
+                        start_date_column = np.array([i for i in column1 if i != None])
+                        # start_date_column = column1
                     if finish_:
-                        finish_date_column = column1
-                        if start_date_column.all() > finish_date_column.all():
-                            error_date_interval = [i for i, value in enumerate(start_date_column)
-                                                   if value > finish_date_column[i]]
-                            for i in error_date_interval:
-                                self.error = 1
-                                self.print_name_table_row_pk(self.df, column_ind, self.name_table,
-                                                             self.df.values[i],
-                                                             i, column_ind, BugStatus.span_year.value)
-                                logger.warning(
-                                    f'warning check span year in cell : column = {column_ind} row = {i}')
+                        finish_date_column = np.array([i for i in column1 if i != None])
+                        if start_date_column.size != 0:
+                            # finish_date_column = column1
+                            if start_date_column.all() > finish_date_column.all():
+                                error_date_interval = [i for i, value in enumerate(start_date_column)
+                                                       if value > finish_date_column[i]]
+                                for i in error_date_interval:
+                                    self.error = 1
+                                    self.print_name_table_row_pk(self.df, column_ind, self.name_table,
+                                                                 self.df.values[i],
+                                                                 i, column_ind, BugStatus.span_year.value)
+                                    logger.warning(
+                                        f'warning check span year in cell : column = {column_ind} row = {i}')
 
 
 class Project(TypeErrors):
@@ -902,8 +905,8 @@ class Resassignment(TypeErrors):
         #     'Dublicate rows in resassagment': [],
         #     'target value not equal (act+remain)': []
         # }
-        list_valid = [#self.analysis_data_df_sql_query,
-        #               self.analysis_two_tables_sql,
+        list_valid = [self.analysis_data_df_sql_query,
+                     self.analysis_two_tables_sql,
                       self.analysis_resassagnment,
                       self.check_target,
                       self.write_to_dict]
