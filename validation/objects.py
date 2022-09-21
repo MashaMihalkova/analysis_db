@@ -1,32 +1,31 @@
+import enum
 import datetime
 import json
-import math
 import numpy as np
 import pandas as pd
 import re
 
-from db.database import SessionLocal
-from logging_format import logger
+from db.database import SessionLocalEtl as SessionLocal
+from validation.logging_format import logger
 from tqdm import tqdm
-import time
-import enum
-
 
 PATH_TO_LOG = 'log/'
-NAME_LOG = 'log_new.txt'
+NAME_LOG = 'log_.txt'
+
 
 class BugStatus(enum.Enum):
-    big_value = 'Very big value'
-    small_value = 'Very small value'
-    Wrong_sign = 'Wrong sign'
-    small_data = 'Small data'
-    big_data = 'Big data'
-    span_year = 'Error span year'
-    mismatch_in2tables = 'Mismatch of values in two tables'
-    another_errors = 'another errors'
-    dublic_rows_in_resass ='Dublicate rows in resassagment'
-    target_not_equal = 'target value not equal (act+remain)'
+    big_value = 'Большое значение'
+    small_value = 'Маленькое значение'
+    Wrong_sign = 'Неверный знак'
+    small_data = 'Маленькая дата'
+    big_data = 'Большая дата'
+    span_year = 'Выброс даты'
+    mismatch_in2tables = 'Отличие в данных pm и pmc'
+    another_errors = 'Не распознанная ошибка'
+    dublic_rows_in_resass = 'Дубликат в resassagment'
+    target_not_equal = 'План не равен факт+остаток'
     another_error_value = 'Ни на одну работу не назначены коды!'
+
 
 class TypeErrors:
 
@@ -40,15 +39,15 @@ class TypeErrors:
         self.id_proj = id_proj
         self.id_wbs = id_wbs
         # self.data = {
-        #     'Very big value': [],
-        #     'Very small value': [],
-        #     'Wrong sign': [],
-        #     'Small data': [],
-        #     'Big data': [],
-        #     'Error span year': [],
-        #     'Mismatch of values in two tables': [],
+        #     'Большое значение': [],
+        #     'Маленькое значение': [],
+        #     'Неверный знак': [],
+        #     'Маленькая дата': [],
+        #     'Большая дата': [],
+        #     'Выброс даты': [],
+        #     'Отличие в данных pm и pmc': [],
         # }
-        self.error = 0 # 1-error 0-warning
+        self.error = 0  # 1-error 0-warning
         self.data = {
             BugStatus.big_value.value: [],
             BugStatus.small_value.value: [],
@@ -103,8 +102,8 @@ class TypeErrors:
                 if elem in minus_int_float_array:
                     # self.print_name_table_row_pk(self.df, column_index, self.name_table,
                     #                              self.df.values[row + begin_table - 1][column_index],
-                    #                              row, True, self.pk, 'Wrong sign')
-                    self.error = 1
+                    #                              row, True, self.pk, 'Неверный знак')
+                    self.error = 0
                     self.print_name_table_row_pk(self.df, column_index, self.name_table,
                                                  self.df.values[row + begin_table - 1][column_index],
                                                  row, True, self.pk, BugStatus.Wrong_sign.value)
@@ -141,7 +140,7 @@ class TypeErrors:
                             if elem > mean:
                                 self.print_name_table_row_pk(self.df, column_index, self.name_table, elem, index[row],
                                                              True,
-                                                             self.pk, BugStatus.big_value.value) # 'Very big value'
+                                                             self.pk, BugStatus.big_value.value)  # 'Большое значение'
                                 # print(f'{elem} too big. mean = {np.mean(column1)} ')
 
                                 logger.warning(
@@ -153,7 +152,7 @@ class TypeErrors:
                                 # print("quant // len(column1[index]) // 10 = ", quant // len(column1[index]) // 10)
                                 self.print_name_table_row_pk(self.df, column_index, self.name_table, elem, index[row],
                                                              True,
-                                                             self.pk, BugStatus.small_value.value) # 'Very small value'
+                                                             self.pk, BugStatus.small_value.value)  # 'Маленькое значение'
 
                                 logger.warning(
                                     f'warning small value {elem}, id_resource = {id_resource}, mean = {np.mean(column1)}, k = {k} ')
@@ -171,7 +170,7 @@ class TypeErrors:
             # '''
             if column1_big:
                 self.print_name_table_row_pk(self.df, column_index, self.name_table, elem, row, True, self.pk,
-                                             BugStatus.big_value.value) #'Very big value'
+                                             BugStatus.big_value.value)  # 'Большое значение'
                 logger.warning(
                     f'warning big value {elem} in cell : column = {column_index} row = {row}')
             for row, elem in enumerate(column1):
@@ -180,13 +179,13 @@ class TypeErrors:
                     if elem > quant * len(column1) // 100:  # (10**(len(str(len(column1)))-1)):
 
                         self.print_name_table_row_pk(self.df, column_index, self.name_table, elem, row, True, self.pk,
-                                                     BugStatus.big_value.value) #'Very big value'
+                                                     BugStatus.big_value.value)  # 'Большое значение'
                         logger.warning(
                             f'warning big value {elem} in cell : column = {column_index} row = {row}')
 
                     if elem < quant // len(column1) // 10:
                         self.print_name_table_row_pk(self.df, column_index, self.name_table, elem, row, True, self.pk,
-                                                     BugStatus.small_value.value) #'Very small value'
+                                                     BugStatus.small_value.value)  # 'Маленькое значение'
 
                         logger.warning(
                             f'warning small value {elem} in cell : column = {column_index} row = {row}')
@@ -221,7 +220,7 @@ class TypeErrors:
                             if elem > mean:
                                 self.print_name_table_row_pk(self.df, column_index, self.name_table, elem, index[row],
                                                              True,
-                                                             self.pk, BugStatus.big_value.value) #'Very big value'
+                                                             self.pk, BugStatus.big_value.value)  # 'Большое значение'
                                 # print(f'{elem} too big. mean = {np.mean(column1)} ')
 
                                 logger.warning(
@@ -231,7 +230,7 @@ class TypeErrors:
                             if elem <= mean:
                                 self.print_name_table_row_pk(self.df, column_index, self.name_table, elem, index[row],
                                                              True,
-                                                             self.pk, BugStatus.small_value.value) #'Very small value'
+                                                             self.pk, BugStatus.small_value.value)  # 'Маленькое значение'
 
                                 logger.warning(
                                     f'warning small value {elem}, id_resource = {id_resource}, mean = {np.mean(column1)}, k = {k} ')
@@ -242,18 +241,18 @@ class TypeErrors:
             small_q = quant // len(column1) // 10
             if type(self.pk) == str:
                 sql_big = f'''
-                            select 	{self.pk}, {name_column} from {self.name_table} 
+                            select 	{self.pk}, {name_column} from "{self.name_table}" 
                                 where {self.df.columns[column_index]}>{big_q}
                             '''
-                sql_small = f'''select 	{self.pk}, {name_column} from {self.name_table} 
+                sql_small = f'''select 	{self.pk}, {name_column} from "{self.name_table}" 
                                   where {self.df.columns[column_index]}< {small_q}
                                             '''
             else:
 
-                sql_big = f'''select 	{self.pk[0]},{self.pk[1]}, {name_column} from {self.name_table} 
+                sql_big = f'''select 	{self.pk[0]},{self.pk[1]}, {name_column} from "{self.name_table}" 
                                  where {self.df.columns[column_index]}>{big_q}
                                             '''
-                sql_small = f'''select 	{self.pk[0]},{self.pk[1]}, {name_column} from {self.name_table} 
+                sql_small = f'''select 	{self.pk[0]},{self.pk[1]}, {name_column} from "{self.name_table}" 
                                  where {self.df.columns[column_index]}< {small_q}
                                                             '''
             with SessionLocal() as db:
@@ -262,44 +261,44 @@ class TypeErrors:
                 self.error = 0
                 if column1_big:
                     self.print_name_table_row_pk_sql(self.df, column_index, self.name_table, column1_big, True, self.pk,
-                                                     BugStatus.big_value.value, 0) # 'Very big value'
+                                                     BugStatus.big_value.value, 0)  # 'Большое значение'
 
                 if column1_small:
                     self.print_name_table_row_pk_sql(self.df, column_index, self.name_table, column1_big, True, self.pk,
-                                                    BugStatus.small_value.value , 0) #'Very small value'
+                                                     BugStatus.small_value.value, 0)  # 'Маленькое значение'
 
     def check_date(self, column1, column_index):
         date_today = datetime.date.today()
 
-        too_big_year = [i for i, value in enumerate(column1) if value.year > date_today.year + 5]
+        too_big_year = [i for i, value in enumerate(column1) if value.year > date_today.year + 7]
         # too_big_year = [i for i, value in enumerate(column1) if value.year == date_today.year ]
         too_small_year = [i for i, value in enumerate(column1) if value.year < date_today.year - 5]
         if too_big_year:
             for i in too_big_year:
-                self.error = 0
+                self.error = 1
                 self.print_name_table_row_pk(self.df, column_index, self.name_table, column1[i], i, True, self.pk,
-                                             BugStatus.big_data.value) #'Very big data'
+                                             BugStatus.big_data.value)  # 'Very big data'
                 logger.warning(
                     f'warning big year in cell : column = {column_index} row = {i}')
         if too_small_year:
             self.error = 1
             for i in too_small_year:
                 self.print_name_table_row_pk(self.df, column_index, self.name_table, column1[i], i, True, self.pk,
-                                             BugStatus.small_data.value) #'Very small data'
+                                             BugStatus.small_data.value)  # 'Very small data'
 
                 logger.warning(
                     f'warning small year in cell : column = {column_index} row = {i}')
 
     def check_date_sql(self, column_index):
         date_today = datetime.date.today()
-        big_date = date_today.year + 5
+        big_date = date_today.year + 7
         small_date = date_today.year - 5
         sql_big_year = f'''
-            select * from {self.name_table}
+            select * from "{self.name_table}"
             where DATE_PART('year', "{self.df.columns[column_index]}"::date)> {big_date}
             '''
         sql_small_year = f'''
-                    select * from {self.name_table}
+                    select * from "{self.name_table}"
                     where DATE_PART('year', "{self.df.columns[column_index]}"::date)< {small_date}
                     '''
         with SessionLocal() as db:
@@ -307,13 +306,13 @@ class TypeErrors:
             too_small_year = db.execute(sql_small_year).fetchall()
 
         if too_big_year:
-            self.error = 0
+            self.error = 1
             self.print_name_table_row_pk_sql(self.df, column_index, self.name_table, too_big_year, True, self.pk,
-                                           BugStatus.big_data.value  , 0) #'Big data'
+                                             BugStatus.big_data.value, 0)  # 'Большая дата'
         if too_small_year:
             self.error = 1
             self.print_name_table_row_pk_sql(self.df, column_index, self.name_table, too_small_year, True, self.pk,
-                                            BugStatus.small_data.value , 0) #'Small data'
+                                             BugStatus.small_data.value, 0)  # 'Маленькая дата'
 
     @staticmethod
     def conv_type_for_json(column1, two_pk, pk):
@@ -356,30 +355,19 @@ class TypeErrors:
                  'name_column': df.columns[i]}
         dict_PK = {}
         dict_value = {}
+        dict_error = {'error': self.error}
 
         print(f'name column = {df.columns[i]}')
         if not one_table:
             if type(PK) == str:
                 print(f'PK {PK} = {df[PK].values[j]}')
                 dict_PK = {'PK': int(df[PK].values[j])}
-
-                # print(f'PK {PK} = {df[PK].values[j][0]}')
-                # dict_PK = {'PK': int(df[PK].values[j][0])}
             else:
                 print(f'PK {PK[0]} = {df[PK[0]].values[j]}')
                 print(f'PK2 {PK[1]} = {df[PK[1]].values[j]}')
                 dict_PK = {
                     PK[0]: int(df[PK[0]].values[j]),
                     PK[1]: int(df[PK[1]].values[j])}
-
-                # print(f'PK {PK[0]} = {df[PK[0]].values[j][0]}')
-                # print(f'PK2 {PK[1]} = {df[PK[1]].values[j][0]}')
-                # dict_PK = {
-                #     PK[0]: int(df[PK[0]].values[j][0]),
-                #     PK[1]: str(df[PK[1]].values[j][0])}
-            # print(f'{name_table} value = {column1[j][i]}')
-            # print(f'{name_table}_pmc value = {column1[j+1][i]} \n')
-            # values = [column1[j][i], column1[j][i + (df.shape[1]) // 2]]
             values = [column1[j][i], column1[j + 1][i]]
             dict_value = self.conv_type_for_json(values, True, False)
         else:
@@ -396,7 +384,8 @@ class TypeErrors:
                 dict_value = self.conv_type_for_json(column1[j], False, False)
             else:
                 dict_value = self.conv_type_for_json(column1, False, False)
-        c = {**dict_, **dict_PK, **dict_value}
+        # c = {**dict_, **dict_PK, **dict_value}
+        c = {**dict_, **dict_PK, **dict_value, **dict_error}
 
         self.data[f'{type_error}'].append(c)
 
@@ -523,7 +512,7 @@ class TypeErrors:
                 dict_error = {'error': self.error}
                 c = {**dict_, **dict_val, **dict_error}
 
-                self.data['target value not equal (act+remain)'].append(c)
+                self.data[BugStatus.target_not_equal.value].append(c)
 
     # def analysis_two_tables(self):
     #     column1 = self.df_pmc.values
@@ -537,24 +526,24 @@ class TypeErrors:
     #                                 type(column1[j + 1][i]) != pd._libs.tslibs.nattype.NaTType:
     #                             if type(column1[j][i]) == pd._libs.tslibs.timestamps.Timestamp:
     #                                 self.print_name_table_row_pk(self.df_pmc, i, self.name_table, column1, j, False,
-    #                                                              self.pk, 'Mismatch of values in two tables')
+    #                                                              self.pk, 'Отличие в данных pm и pmc')
     #                             elif type(column1[j][i]) == str:
     #                                 self.print_name_table_row_pk(self.df_pmc, i, self.name_table, column1, j, False,
     #                                                              self.pk,
-    #                                                              'Mismatch of values in two tables')
+    #                                                              'Отличие в данных pm и pmc')
     #                             elif type(column1[j][i]) == int:
     #                                 if not math.isnan(column1[j][i]) and not math.isnan(column1[j + 1][i]):
     #                                     if column1[j][i] > column1[j + 1][i]:
     #                                         self.print_name_table_row_pk(self.df_pmc, i, self.name_table, column1, j,
     #                                                                      False,
     #                                                                      self.pk,
-    #                                                                      'Mismatch of values in two tables')
+    #                                                                      'Отличие в данных pm и pmc')
 
     def analysis_two_tables_sql(self):
         sql_PMC = f'''
-        select * from {self.name_table}_pmc
-        WHERE {self.name_table}_pmc.id_project = {self.id_proj} 
-        AND {self.name_table}_pmc.id_wbs = {self.id_wbs}
+        select * from "{self.name_table}_pmc"
+        WHERE "{self.name_table}_pmc".id_project = {self.id_proj} 
+        AND "{self.name_table}_pmc".id_wbs = {self.id_wbs}
         '''
         # sql = f'''
         #         select * from {self.name_table}
@@ -619,25 +608,30 @@ class TypeErrors:
                         if type(y_) == pd._libs.tslibs.timestamps.Timestamp:
                             # def print_name_table_row_pk_sql(self, pmc_column1, i, name_table, column1, one_table, PK, type_error):
                             self.print_name_table_row_pk_sql(pmc_column1, id_column, self.name_table, two_colmns, False,
-                                                             self.pk, BugStatus.mismatch_in2tables.value, rows) #'Mismatch of values in two tables'
+                                                             self.pk, BugStatus.mismatch_in2tables.value,
+                                                             rows)  # 'Отличие в данных pm и pmc'
                         elif type(y_) == str:
                             # self.print_name_table_row_pk(self.df, i, self.name_table, column1, j, False,
                             #                              self.pk,
-                            #                              'Mismatch of values in two tables')
+                            #                              BugStatus.mismatch_in2tables.value)
                             self.print_name_table_row_pk_sql(pmc_column1, id_column, self.name_table, two_colmns, False,
-                                                             self.pk, BugStatus.mismatch_in2tables.value, rows) #'Mismatch of values in two tables'
+                                                             self.pk, BugStatus.mismatch_in2tables.value,
+                                                             rows)  # 'Отличие в данных pm и pmc'
                         elif type(y_) == int or type(y_) == float:
-                            if column1.iloc[rows][id_column] is not None or pmc_column1.iloc[rows][id_column] is not None:
-                                if not np.isnan(column1.iloc[rows][id_column]) and not np.isnan(pmc_column1.iloc[rows][id_column]):
+                            if column1.iloc[rows][id_column] is not None or pmc_column1.iloc[rows][
+                                id_column] is not None:
+                                if not np.isnan(column1.iloc[rows][id_column]) and not np.isnan(
+                                        pmc_column1.iloc[rows][id_column]):
                                     if y > y2:
-                                        self.print_name_table_row_pk_sql(pmc_column1, id_column, self.name_table, two_colmns,
-                                                             False,
-                                                             self.pk, BugStatus.mismatch_in2tables.value, rows) #'Mismatch of values in two tables'
+                                        self.print_name_table_row_pk_sql(pmc_column1, id_column, self.name_table,
+                                                                         two_colmns,
+                                                                         False,
+                                                                         self.pk, BugStatus.mismatch_in2tables.value,
+                                                                         rows)  # 'Отличие в данных pm и pmc'
                         # self.print_name_table_row_pk(self.df_pmc, i, self.name_table, column1, j,
                         #                              False,
                         #                              self.pk,
-                        #                              'Mismatch of values in two tables')
-
+                        #                              'Отличие в данных pm и pmc')
 
     # @dispatch(object, str, str)
     def analysis_data_df(self):
@@ -698,7 +692,8 @@ class TypeErrors:
                             for i in error_date_interval:
                                 self.print_name_table_row_pk(self.df, column_index, self.name_table,
                                                              self.df.values[i],
-                                                             i, column_index, BugStatus.span_year.value) #'Error span year'
+                                                             i, column_index,
+                                                             BugStatus.span_year.value)  # 'Выброс даты'
                                 logger.warning(
                                     f'warning check span year in cell : column = {column_index} row = {i}')
 
@@ -710,7 +705,7 @@ class TypeErrors:
             sql_types = f'''
             SELECT  COLUMN_NAME, DATA_TYPE   FROM INFORMATION_SCHEMA.COLUMNS
                     WHERE TABLE_NAME = '{self.name_table}' AND COLUMN_NAME != '{self.pk}' 
-                    
+
             '''
         #      AND {self.name_table}.id_project = {self.id_proj}
         #                     AND {self.name_table}.id_wbs = {self.id_wbs};
@@ -756,12 +751,13 @@ class TypeErrors:
                         if std_ > 100:
                             try:
                                 if 'remain_qty' != n_type[0] and 'act_reg_qty' != n_type[0]:
-                                    self.big_small_value_warning_sql(column_ind, column1, n_type[1], error_sign, n_type[0])
+                                    self.big_small_value_warning_sql(column_ind, column1, n_type[1], error_sign,
+                                                                     n_type[0])
                             except:
                                 pass
                 if n_type[1] == pd._libs.tslibs.timestamps.Timestamp \
                         or n_type[1] == np.datetime64 \
-                        or n_type[1] == 'timestamp without time zone'\
+                        or n_type[1] == 'timestamp without time zone' \
                         or n_type[1] == 'timestamp with time zone':
                     column1 = self.df[n_type[0]].values
                     column_ind = int(self.df.columns.get_indexer([f'{n_type[0]}']))
@@ -828,14 +824,14 @@ class Activity(TypeErrors):
         }
         list_valid = [self.analysis_data_df_sql_query,
                       self.analysis_two_tables_sql,
-        self.write_to_dict]
+                      self.write_to_dict]
         for i in tqdm(list_valid):
             i()
         # self.analysis_data_df()
         # self.analysis_two_tables()
         data = self.check_dictionary_activity_code_and_activity()
         if data:
-            self.error = 1
+            self.error = 0
             dict_error = {'error': self.error}
             dict_ = {'value': BugStatus.another_error_value.value}
             c = {**dict_, **dict_error}
@@ -895,18 +891,18 @@ class Resassignment(TypeErrors):
             BugStatus.target_not_equal.value: [],
         }
         # self.data = {
-        #     'Very big value': [],
-        #     'Very small value': [],
-        #     'Wrong sign': [],
-        #     'Small data': [],
-        #     'Big data': [],
-        #     'Error span year': [],
-        #     'Mismatch of values in two tables': [],
-        #     'Dublicate rows in resassagment': [],
-        #     'target value not equal (act+remain)': []
+        #     'Большое значение': [],
+        #     'Маленькое значение': [],
+        #     'Неверный знак': [],
+        #     'Маленькая дата': [],
+        #     'Большая дата': [],
+        #     'Выброс даты': [],
+        #     'Отличие в данных pm и pmc': [],
+        #     'Дубликат в resassagment': [],
+        #     'План не равен факт+остаток': []
         # }
         list_valid = [self.analysis_data_df_sql_query,
-                     self.analysis_two_tables_sql,
+                      self.analysis_two_tables_sql,
                       self.analysis_resassagnment,
                       self.check_target,
                       self.write_to_dict]
@@ -944,7 +940,7 @@ class Resassignment(TypeErrors):
                         # print(l[i])
                         # print(i)
                         # self.print_name_table_row_pk(self.df, 0, 'resassignment', [], l[i],
-                        #                              True, 'id_resassignment', 'Dublicate rows in resassagment')
+                        #                              True, 'id_resassignment', 'Дубликат в resassagment')
                         self.print_name_table_row_pk(self.df, 0, 'resassignment', [], l[i],
                                                      True, 'id_resassignment', BugStatus.dublic_rows_in_resass.value)
                         # logger.warning(f'Dublicate rows id = {ind_list[i]} and id = {ind_list[i + 1]}')
@@ -1060,14 +1056,14 @@ class ResassignmentSpred(TypeErrors):
             BugStatus.target_not_equal.value: []
         }
         # self.data = {
-        #     'Very big value': [],
-        #     'Very small value': [],
-        #     'Wrong sign': [],
-        #     'Small data': [],
-        #     'Big data': [],
-        #     'Error span year': [],
-        #     'Mismatch of values in two tables': [],
-        #     'target value not equal (act+remain)': []
+        #     'Большое значение': [],
+        #     'Маленькое значение': [],
+        #     'Неверный знак': [],
+        #     'Маленькая дата': [],
+        #     'Большая дата': [],
+        #     'Выброс даты': [],
+        #     'Отличие в данных pm и pmc': [],
+        #     'План не равен факт+остаток': []
         # }
         # list_valid = [self.analysis_data_df,
         list_valid = [self.analysis_data_df_sql_query,
